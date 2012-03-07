@@ -1,6 +1,8 @@
 <?php
-require_once('vatValidation.class.php');
-$vatValidation = new vatValidation( array('debug' => false));
+require_once(__DIR__ . '/../src/vatValidation.class.php');
+use Snowcap\Vat\validation;
+
+$vatValidation = new validation( array('debug' => false));
 
 
 if($vatValidation->check('BE', '0828639227')) {

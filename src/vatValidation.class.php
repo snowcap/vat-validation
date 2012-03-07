@@ -1,5 +1,7 @@
 <?php
-class vatValidation
+namespace Snowcap\Vat;
+
+class validation
 {
 	const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
 	private $_client = null;
@@ -22,8 +24,8 @@ class vatValidation
 		}
 				
 		try {
-			$this->_client = new SoapClient(self::WSDL, array('trace' => true) );
-		} catch(Exception $e) {
+			$this->_client = new \SoapClient(self::WSDL, array('trace' => true) );
+		} catch(\Exception $e) {
 			$this->trace('Vat Translation Error', $e->getMessage());
 		}
 	}
