@@ -1,5 +1,5 @@
 <?php
-require_once(__DIR__ . '/../src/Vat/Validation.php');
+require_once(__DIR__ . '/../src/Snowcap/Vat/Validation.php');
 use Snowcap\Vat\Validation;
 
 $vatValidation = new Validation( array('debug' => false));
