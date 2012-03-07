@@ -88,7 +88,7 @@ class Validation
         }
                         
         $newString = "";
-        $words = split(" ",$string);
+        $words = explode(" ",$string);
         foreach($words as $k=>$w)
         {                       
            	$newString .= ucfirst(strtolower($w))." "; 
