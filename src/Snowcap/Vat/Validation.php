@@ -6,7 +6,7 @@ class Validation
 	const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
 	private $_client = null;
 
-	private $options  = array(
+	private $_options  = array(
 						'debug' => false,
 						);	
 	
