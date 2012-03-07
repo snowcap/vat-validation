@@ -1,7 +1,7 @@
 <?php
 namespace Snowcap\Vat;
 
-class validation
+class Validation
 {
 	const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
 	private $_client = null;
