@@ -44,11 +44,16 @@ class Validation
 			$this->_valid = true;
 			list($denomination,$name) = explode(" " ,$rs->name,2);
             list($streetline,$cityline) = explode("\n", $rs->address);
-            preg_match('/(.+) ([^ ]+)/', $this->cleanUpString($streetline), $parts);
-            $street = $parts[1];
-            $number = $parts[2];
+            preg_match('/(.+) ([^ ]*[0-9]+[^ ]*)/', $this->cleanUpString($streetline), $parts);
+            if(count($parts) === 0) {
+                $street = $this->cleanUpString($streetline);
+                $number = "";
+            } else {
+                $street = $parts[1];
+                $number = $parts[2];
+            }
 
-            list($zip,$city) = explode(' ', $this->cleanUpString($cityline));
+            list($zip,$city) = explode(' ', $this->cleanUpString($cityline), 2);
 
 			$this->_data = array(
 									'denomination' => 	$denomination,
