@@ -20,7 +20,7 @@ class Validation
 		}
 		
 		if(!class_exists('SoapClient')) {
-			throw new Exception('The Soap library has to be installed and enabled');
+			throw new \Exception('The Soap library has to be installed and enabled');
 		}
 				
 		try {
@@ -32,6 +32,8 @@ class Validation
 
 	public function check($countryCode, $vatNumber) {
 
+        $vatNumber = preg_replace("/[ .]/","",$vatNumber);
+
 		$rs = $this->_client->checkVat( array('countryCode' => $countryCode, 'vatNumber' => $vatNumber) );
 
 		if($this->isDebug()) {
@@ -41,10 +43,21 @@ class Validation
 		if($rs->valid) {
 			$this->_valid = true;
 			list($denomination,$name) = explode(" " ,$rs->name,2);
+            list($streetline,$cityline) = explode("\n", $rs->address);
+            preg_match('/(.+) ([^ ]+)/', $this->cleanUpString($streetline), $parts);
+            $street = $parts[1];
+            $number = $parts[2];
+
+            list($zip,$city) = explode(' ', $this->cleanUpString($cityline));
+
 			$this->_data = array(
-									'denomination' => 	$denomination, 
-									'name' => 			$this->cleanUpString($name), 
+									'denomination' => 	$denomination,
+									'name' => 			$this->cleanUpString($name),
 									'address' => 		$this->cleanUpString($rs->address),
+                                    'street' =>         $street,
+                                    'number' =>         $number,
+                                    'zip' =>            $zip,
+                                    'city' =>           $city,
 								);
 			return true;
 		} else {
@@ -69,7 +82,23 @@ class Validation
 	public function getAddress() {
 		return $this->_data['address'];
 	}
-	
+
+    public function getStreet() {
+        return $this->_data['street'];
+    }
+
+    public function getNumber() {
+        return $this->_data['number'];
+    }
+
+    public function getZip() {
+        return $this->_data['zip'];
+    }
+
+    public function getCity() {
+        return $this->_data['city'];
+    }
+
 	public function isDebug() {
 		return ($this->_options['debug'] === true);
 	}
@@ -93,7 +122,7 @@ class Validation
         {                       
            	$newString .= ucfirst(strtolower($w))." "; 
         }                
-        return $newString;
+        return trim($newString);
 	}
 }
 
