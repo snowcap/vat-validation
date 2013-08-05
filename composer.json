@@ -1,0 +1,32 @@
+{
+    "name": "snowcap/vat-validation",
+    "description": "EU VAT number validation",
+    "keywords": ["Utility"],
+    "homepage": "https://github.com/snowcap/vat-validation",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Pierre Vanliefland",
+            "email": "pierre@snowcap.be"
+        },
+        {
+            "name": "Edwin Hermans",
+            "email": "edwin@snowcap.be"
+        },
+        {
+            "name": "Jérôme Poskin",
+            "email": "jerome@snowcap.be"
+        },
+        {
+            "name": "Snowcap",
+            "homepage": "http://www.snowcap.be"
+        }
+    ],
+    "minimum-stability": "dev",
+    "require": {
+        "php": ">=5.3.3"
+    },
+    "autoload": {
+        "psr-0": { "Snowcap\\Vat": "src" }
+    }
+}
