@@ -3,49 +3,51 @@ namespace Snowcap\Vat;
 
 class Validation
 {
-	const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
-	private $_client = null;
+    const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
+    private $_client = null;
 
-	private $_options  = array(
-						'debug' => false,
-						);	
-	
-	private $_valid = false;
-	private $_data = array();
-	
-	public function __construct($options = array()) {
-		
-		foreach($options as $option => $value) {
-			$this->_options[$option] = $value;
-		}
-		
-		if(!class_exists('SoapClient')) {
-			throw new \Exception('The Soap library has to be installed and enabled');
-		}
-				
-		try {
-			$this->_client = new \SoapClient(self::WSDL, array('trace' => true) );
-		} catch(\Exception $e) {
-			$this->trace('Vat Translation Error', $e->getMessage());
-		}
-	}
+    private $_options = array(
+        'debug' => false,
+    );
 
-	public function check($countryCode, $vatNumber) {
+    private $_valid = false;
+    private $_data = array();
 
-        $vatNumber = preg_replace("/[ .]/","",$vatNumber);
+    public function __construct($options = array())
+    {
 
-		$rs = $this->_client->checkVat( array('countryCode' => $countryCode, 'vatNumber' => $vatNumber) );
+        foreach ($options as $option => $value) {
+            $this->_options[$option] = $value;
+        }
 
-		if($this->isDebug()) {
-			$this->trace('Web Service result', $this->_client->__getLastResponse());	
-		}
+        if (!class_exists('SoapClient')) {
+            throw new \Exception('The Soap library has to be installed and enabled');
+        }
 
-		if($rs->valid) {
-			$this->_valid = true;
-			list($denomination,$name) = explode(" " ,$rs->name,2);
-            list($streetline,$cityline) = explode("\n", $rs->address);
+        try {
+            $this->_client = new \SoapClient(self::WSDL, array('trace' => true));
+        } catch (\Exception $e) {
+            $this->trace('Vat Translation Error', $e->getMessage());
+        }
+    }
+
+    public function check($countryCode, $vatNumber)
+    {
+
+        $vatNumber = preg_replace("/[ .]/", "", $vatNumber);
+
+        $rs = $this->_client->checkVat(array('countryCode' => $countryCode, 'vatNumber' => $vatNumber));
+
+        if ($this->isDebug()) {
+            $this->trace('Web Service result', $this->_client->__getLastResponse());
+        }
+
+        if ($rs->valid) {
+            $this->_valid = true;
+            list($denomination, $name) = explode(" ", $rs->name, 2);
+            list($streetline, $cityline) = explode("\n", $rs->address);
             preg_match('/(.+) ([^ ]*[0-9]+[^ ]*)/', $this->cleanUpString($streetline), $parts);
-            if(count($parts) === 0) {
+            if (count($parts) === 0) {
                 $street = $this->cleanUpString($streetline);
                 $number = "";
             } else {
@@ -53,82 +55,115 @@ class Validation
                 $number = $parts[2];
             }
 
-            list($zip,$city) = explode(' ', $this->cleanUpString($cityline), 2);
+            list($zip, $city) = explode(' ', $this->cleanUpString($cityline), 2);
 
-			$this->_data = array(
-									'denomination' => 	$denomination,
-									'name' => 			$this->cleanUpString($name),
-									'address' => 		$this->cleanUpString($rs->address),
-                                    'street' =>         $street,
-                                    'number' =>         $number,
-                                    'zip' =>            $zip,
-                                    'city' =>           $city,
-								);
-			return true;
-		} else {
-			$this->_valid = false;
-			$this->_data = array();
-		    return false;
-		}
-	}
+            $this->_data = array(
+                'denomination' => $denomination,
+                'name' => $this->cleanUpString($name),
+                'address' => $this->cleanUpString($rs->address),
+                'street' => $street,
+                'number' => $number,
+                'zip' => $zip,
+                'city' => $city,
+                'country' => $countryCode
+            );
 
-	public function isValid() {
-		return $this->_valid;
-	}
-	
-	public function getDenomination() {
-		return $this->_data['denomination'];
-	}
-	
-	public function getName() {
-		return $this->_data['name'];
-	}
-	
-	public function getAddress() {
-		return $this->_data['address'];
-	}
+            return true;
+        } else {
+            $this->_valid = false;
+            $this->_data = array();
 
-    public function getStreet() {
+            return false;
+        }
+    }
+
+    public function checkNumber($vatNumberWithCountryCode)
+    {
+        $pattern = '/([A-Z]{2})(.+)/i';
+        $match = preg_match($pattern, $vatNumberWithCountryCode, $matches);
+
+        if (0 !== $match) {
+            $countryCode = $matches[1];
+            $number = trim($matches[2]);
+
+            return $this->check($countryCode, $number);
+        }
+
+        return false;
+    }
+
+    public function isValid()
+    {
+        return $this->_valid;
+    }
+
+    public function getDenomination()
+    {
+        return $this->_data['denomination'];
+    }
+
+    public function getName()
+    {
+        return $this->_data['name'];
+    }
+
+    public function getAddress()
+    {
+        return $this->_data['address'];
+    }
+
+    public function getStreet()
+    {
         return $this->_data['street'];
     }
 
-    public function getNumber() {
+    public function getNumber()
+    {
         return $this->_data['number'];
     }
 
-    public function getZip() {
+    public function getZip()
+    {
         return $this->_data['zip'];
     }
 
-    public function getCity() {
+    public function getCity()
+    {
         return $this->_data['city'];
     }
 
-	public function isDebug() {
-		return ($this->_options['debug'] === true);
-	}
-	private function trace($title,$body) {
-		echo '<h2>TRACE: '.$title.'</h2><pre>'. htmlentities($body).'</pre>';
-	}
-	private function cleanUpString($string) {
-        for($i=0;$i<100;$i++)
-        {               
-            $newString = str_replace("  "," ",$string);
-            if($newString === $string) {
-            	break;
-            } else {
-            	$string = $newString;
-			}
-        }
-                        
-        $newString = "";
-        $words = explode(" ",$string);
-        foreach($words as $k=>$w)
-        {                       
-           	$newString .= ucfirst(strtolower($w))." "; 
-        }                
-        return trim($newString);
-	}
-}
+    public function getData()
+    {
+        return $this->_data;
+    }
 
-?>
+    public function isDebug()
+    {
+        return ($this->_options['debug'] === true);
+    }
+
+    private function trace($title, $body)
+    {
+        echo '<h2>TRACE: ' . $title . '</h2><pre>' . htmlentities($body) . '</pre>';
+    }
+
+    private function cleanUpString($string)
+    {
+        for ($i = 0; $i < 100; $i++) {
+            $newString = str_replace("  ", " ", $string);
+            if ($newString === $string) {
+                break;
+            } else {
+                $string = $newString;
+            }
+        }
+
+        $newString = "";
+        $words = explode(" ", $string);
+        foreach ($words as $k => $w) {
+            $newString .= ucfirst(strtolower($w)) . " ";
+        }
+
+        return trim($newString);
+    }
+}
