@@ -1,18 +1,36 @@
 <?php
+
 namespace Snowcap\Vat;
 
 class Validation
 {
     const WSDL = "http://ec.europa.eu/taxation_customs/vies/checkVatService.wsdl";
+
+    /**
+     * @var \SoapClient
+     */
     private $_client = null;
 
+    /**
+     * @var array
+     */
     private $_options = array(
         'debug' => false,
     );
 
+    /**
+     * @var bool
+     */
     private $_valid = false;
+
+    /**
+     * @var array
+     */
     private $_data = array();
 
+    /**
+     * @param array $options
+     */
     public function __construct($options = array())
     {
 
@@ -23,23 +41,26 @@ class Validation
         if (!class_exists('SoapClient')) {
             throw new \Exception('The Soap library has to be installed and enabled');
         }
-
-        try {
-            $this->_client = new \SoapClient(self::WSDL, array('trace' => true));
-        } catch (\Exception $e) {
-            $this->trace('Vat Translation Error', $e->getMessage());
-        }
     }
 
+    /**
+     * @param string $countryCode
+     * @param string $vatNumber
+     * @return bool
+     */
     public function check($countryCode, $vatNumber)
     {
+        $this->initClient();
 
         $vatNumber = preg_replace("/[ .]/", "", $vatNumber);
 
-        $rs = $this->_client->checkVat(array('countryCode' => $countryCode, 'vatNumber' => $vatNumber));
-
-        if ($this->isDebug()) {
-            $this->trace('Web Service result', $this->_client->__getLastResponse());
+        try {
+            $rs = $this->_client->checkVat(array('countryCode' => $countryCode, 'vatNumber' => $vatNumber));
+        }
+        catch(\SoapFault $e) {
+            if($e->getMessage() === 'INVALID_INPUT') {
+                return false;
+            }
         }
 
         if ($rs->valid) {
@@ -77,8 +98,14 @@ class Validation
         }
     }
 
+    /**
+     * @param string $vatNumberWithCountryCode
+     * @return bool
+     */
     public function checkNumber($vatNumberWithCountryCode)
     {
+        $this->initClient();
+
         $pattern = '/([A-Z]{2})(.+)/i';
         $match = preg_match($pattern, $vatNumberWithCountryCode, $matches);
 
@@ -142,9 +169,11 @@ class Validation
         return ($this->_options['debug'] === true);
     }
 
-    private function trace($title, $body)
+    private function initClient()
     {
-        echo '<h2>TRACE: ' . $title . '</h2><pre>' . htmlentities($body) . '</pre>';
+        if(null === $this->_client) {
+            $this->_client = new \SoapClient(self::WSDL, array('trace' => true));
+        }
     }
 
     private function cleanUpString($string)
