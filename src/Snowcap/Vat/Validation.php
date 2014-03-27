@@ -61,6 +61,8 @@ class Validation
             if($e->getMessage() === 'INVALID_INPUT') {
                 return false;
             }
+
+            throw $e;
         }
 
         if ($rs->valid) {
