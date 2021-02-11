@@ -67,30 +67,35 @@ class Validation
 
         if ($rs->valid) {
             $this->_valid = true;
-            //multibyte chars in company details cause issues
-            list($denomination, $name) = mb_strpos($rs->name, ' ') !== false ? explode(" ", $rs->name, 2) : array('', ''); 
-            list($streetline, $cityline) = mb_strpos($rs->address, "\n" !== false) ? explode("\n", $rs->address) : array('', '');
-            preg_match('/(.+) ([^ ]*[0-9]+[^ ]*)/', $this->cleanUpString($streetline), $parts);
-            if (count($parts) === 0) {
-                $street = $this->cleanUpString($streetline);
-                $number = "";
-            } else {
-                $street = $parts[1];
-                $number = $parts[2];
+            try {
+                //multibyte chars in company details cause issues
+                list($denomination, $name) = mb_strpos($rs->name, ' ') !== false ? explode(" ", $rs->name, 2) : array('', ''); 
+                list($streetline, $cityline) = mb_strpos($rs->address, "\n") !== false ? explode("\n", $rs->address) : array('', '');
+                preg_match('/(.+) ([^ ]*[0-9]+[^ ]*)/', $this->cleanUpString($streetline), $parts);
+                if (count($parts) === 0) {
+                    $street = $this->cleanUpString($streetline);
+                    $number = "";
+                } else {
+                    $street = $parts[1];
+                    $number = $parts[2];
+                }
+
+                list($zip, $city) = $cityline !== '' ? explode(' ', $this->cleanUpString($cityline), 2) : array('', '');
+
+                $this->_data = array(
+                    'denomination' => $denomination,
+                    'name' => $this->cleanUpString($name),
+                    'address' => $this->cleanUpString($rs->address),
+                    'street' => $street,
+                    'number' => $number,
+                    'zip' => $zip,
+                    'city' => $city,
+                    'country' => $countryCode
+                );
+            } catch (\Exception $e) {
+                //even if there is any error while processing the response data (and I've found some for Czech and Irish ones) the code should still return "valid"
+                return $rs->valid;
             }
-
-            list($zip, $city) = $cityline !== '' ? explode(' ', $this->cleanUpString($cityline), 2) : array('', '');
-
-            $this->_data = array(
-                'denomination' => $denomination,
-                'name' => $this->cleanUpString($name),
-                'address' => $this->cleanUpString($rs->address),
-                'street' => $street,
-                'number' => $number,
-                'zip' => $zip,
-                'city' => $city,
-                'country' => $countryCode
-            );
 
             return true;
         } else {
